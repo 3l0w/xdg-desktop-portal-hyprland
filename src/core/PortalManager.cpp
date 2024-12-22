@@ -31,7 +31,7 @@ SOutput::SOutput(SP<CCWlOutput> output_) : output(output_) {
             y         = y_;
         });
     output->setScale([this](CCWlOutput* r, uint32_t factor_) { scale = factor_; });
-    output->setDone([](CCWlOutput* r) { g_pPortalManager->m_sPortals.inputCapture->zonesChanged(); });
+    output->setDone([](CCWlOutput* r) {});
 }
 
 CPortalManager::CPortalManager() {
@@ -60,6 +60,7 @@ void CPortalManager::onGlobal(uint32_t name, const char* interface, uint32_t ver
 
     Debug::log(LOG, " | Got interface: {} (ver {})", INTERFACE, version);
 
+
     if (INTERFACE == zwlr_screencopy_manager_v1_interface.name && m_sPipewire.loop) {
         m_sPortals.screencopy = std::make_unique<CScreencopyPortal>(makeShared<CCZwlrScreencopyManagerV1>(
             (wl_proxy*)wl_registry_bind((wl_registry*)m_sWaylandConnection.registry->resource(), name, &zwlr_screencopy_manager_v1_interface, version)));
@@ -69,9 +70,23 @@ void CPortalManager::onGlobal(uint32_t name, const char* interface, uint32_t ver
         m_sPortals.globalShortcuts = std::make_unique<CGlobalShortcutsPortal>(makeShared<CCHyprlandGlobalShortcutsManagerV1>(
             (wl_proxy*)wl_registry_bind((wl_registry*)m_sWaylandConnection.registry->resource(), name, &hyprland_global_shortcuts_manager_v1_interface, version)));
     }
+
+    if (m_sPortals.remoteDesktop == nullptr)
+        m_sPortals.remoteDesktop = std::make_unique<CRemoteDesktopPortal>();
+
     if (INTERFACE == hyprland_input_capture_manager_v1_interface.name)
         m_sPortals.inputCapture = std::make_unique<CInputCapturePortal>(makeShared<CCHyprlandInputCaptureManagerV1>(
             (wl_proxy*)wl_registry_bind((wl_registry*)m_sWaylandConnection.registry->resource(), name, &hyprland_input_capture_manager_v1_interface, version)));
+
+    if (INTERFACE == zwlr_virtual_pointer_manager_v1_interface.name)
+        m_sPortals.remoteDesktop->registerPointer(makeShared<CCZwlrVirtualPointerManagerV1>(
+            (wl_proxy*)wl_registry_bind((wl_registry*)m_sWaylandConnection.registry->resource(), name, &zwlr_virtual_pointer_manager_v1_interface, version)));
+
+    if (INTERFACE == zwp_virtual_keyboard_manager_v1_interface.name)
+        m_sPortals.remoteDesktop->registerKeyboard(makeShared<CCZwpVirtualKeyboardManagerV1>(
+            (wl_proxy*)wl_registry_bind((wl_registry*)m_sWaylandConnection.registry->resource(), name, &zwp_virtual_keyboard_manager_v1_interface, version)));
+
+
     else if (INTERFACE == hyprland_toplevel_export_manager_v1_interface.name) {
         m_sWaylandConnection.hyprlandToplevelMgr = makeShared<CCHyprlandToplevelExportManagerV1>(
             (wl_proxy*)wl_registry_bind((wl_registry*)m_sWaylandConnection.registry->resource(), name, &hyprland_toplevel_export_manager_v1_interface, version));
@@ -84,6 +99,20 @@ void CPortalManager::onGlobal(uint32_t name, const char* interface, uint32_t ver
                                  .get();
         POUTPUT->id = name;
     }
+
+    else if (INTERFACE == wl_seat_interface.name) {
+        m_sWaylandConnection.seat = makeShared<CCWlSeat>((wl_proxy*)wl_registry_bind((wl_registry*)m_sWaylandConnection.registry->resource(), name, &wl_seat_interface, version));
+    }
+
+    /*
+    else if (INTERFACE == wl_keyboard_interface.name) {
+        const auto PKEYBOARD = m_vKeyboards
+                                 .emplace_back(std::make_unique<SKeyboard>(makeShared<CCWlKeyboard>(
+                                     (wl_proxy*)wl_registry_bind((wl_registry*)m_sWaylandConnection.registry->resource(), name, &wl_keyboard_interface, version))))
+                                 .get();
+        PKEYBOARD->id = name;
+    }
+    */
 
     else if (INTERFACE == zwp_linux_dmabuf_v1_interface.name) {
         if (version < 4) {
@@ -419,8 +448,9 @@ void CPortalManager::startEventLoop() {
     m_sPortals.globalShortcuts.reset();
     m_sPortals.screencopy.reset();
     m_sPortals.screenshot.reset();
-    m_sHelpers.toplevel.reset();
     m_sPortals.inputCapture.reset();
+    m_sPortals.remoteDesktop.reset();
+    m_sHelpers.toplevel.reset();
 
     m_pConnection.reset();
     pw_loop_destroy(m_sPipewire.loop);
