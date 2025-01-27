@@ -89,7 +89,7 @@ file(GLOB_RECURSE SRCFILES CONFIGURE_DEPENDS "src/*.cpp")
 add_executable(xdg-desktop-portal-hyprland ${SRCFILES})
 target_link_libraries(
   xdg-desktop-portal-hyprland PRIVATE rt PkgConfig::SDBUS Threads::Threads
-										PkgConfig::deps)
+                                      PkgConfig::deps)
 
 # protocols
 pkg_get_variable(WAYLAND_PROTOCOLS_DIR wayland-protocols pkgdatadir)
