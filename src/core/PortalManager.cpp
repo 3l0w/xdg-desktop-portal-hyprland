@@ -49,9 +49,9 @@ void CPortalManager::setupXDGOutput(SOutput* output) {
         output->logicalPositionValid = true;
     });
     output->xdgOutput->setLogicalSize([output](CCZxdgOutputV1* r, int32_t width, int32_t height) {
-        output->logicalWidth         = width;
-        output->logicalHeight        = height;
-        output->logicalSizeValid     = true;
+        output->logicalWidth     = width;
+        output->logicalHeight    = height;
+        output->logicalSizeValid = true;
     });
     output->xdgOutput->setDone([](CCZxdgOutputV1* r) {
         if (g_pPortalManager->m_sPortals.inputCapture != nullptr)
@@ -104,8 +104,7 @@ void CPortalManager::onGlobal(uint32_t name, const char* interface, uint32_t ver
 
         for (auto& output : m_vOutputs)
             setupXDGOutput(output.get());
-    }
-    else if (INTERFACE == hyprland_toplevel_export_manager_v1_interface.name) {
+    } else if (INTERFACE == hyprland_toplevel_export_manager_v1_interface.name) {
         m_sWaylandConnection.hyprlandToplevelMgr = makeShared<CCHyprlandToplevelExportManagerV1>(
             (wl_proxy*)wl_registry_bind((wl_registry*)m_sWaylandConnection.registry->resource(), name, &hyprland_toplevel_export_manager_v1_interface, version));
     }
@@ -115,7 +114,7 @@ void CPortalManager::onGlobal(uint32_t name, const char* interface, uint32_t ver
                                  .emplace_back(std::make_unique<SOutput>(makeShared<CCWlOutput>(
                                      (wl_proxy*)wl_registry_bind((wl_registry*)m_sWaylandConnection.registry->resource(), name, &wl_output_interface, version))))
                                  .get();
-        POUTPUT->id = name;
+        POUTPUT->id        = name;
         setupXDGOutput(POUTPUT);
     }
 

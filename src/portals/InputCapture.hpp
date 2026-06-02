@@ -33,11 +33,11 @@ class CInputCapturePortal {
     struct SSession {
         SSession(sdbus::ObjectPath requestHandle, sdbus::ObjectPath sessionHandle, std::string sessionId, uint32_t capabilities, wl_proxy* proxy);
 
-        sdbus::ObjectPath requestHandle, sessionHandle;
-        std::string       sessionId;
-        uint32_t          capabilities = 0;
-        int32_t           eisFD        = -1;
-        bool              dead         = false;
+        sdbus::ObjectPath                      requestHandle, sessionHandle;
+        std::string                            sessionId;
+        uint32_t                               capabilities = 0;
+        int32_t                                eisFD        = -1;
+        bool                                   dead         = false;
         std::unordered_map<uint32_t, uint32_t> barrierIdMap;
 
         //
@@ -49,8 +49,8 @@ class CInputCapturePortal {
     std::unordered_map<std::string, const std::shared_ptr<SSession>> sessions;
     //
     std::unique_ptr<sdbus::IObject> m_pObject;
-    uint                            sessionCounter = 0;
-    uint                            lastZoneSet    = 1;
+    uint                            sessionCounter   = 0;
+    uint                            lastZoneSet      = 1;
     uint32_t                        barrierIdCounter = 1;
 
     //
